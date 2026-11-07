@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Highway Rush 3D - Relâmpago McQueen</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Import Three.js via CDN -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD OVERLAY (baseado na imagem modelo) -->
+    <div id="hud">
+      <!-- TOP LEFT: Troféus + Objetivo + Posição -->
+      <div class="hud-top-left">
+        <div class="trophy-badge">
+          <svg class="trophy-icon" viewBox="0 0 64 64" width="34" height="34">
+            <defs>
+              <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffe66d"/>
+                <stop offset="50%" stop-color="#f7b731"/>
+                <stop offset="100%" stop-color="#d48806"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 10 H48 V24 C48 36 38 42 32 42 C26 42 16 36 16 24 Z" fill="url(#goldGrad)" stroke="#9e6200" stroke-width="2"/>
+            <path d="M16 14 H8 C8 26 14 30 17 30" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M48 14 H56 C56 26 50 30 47 30" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round"/>
+            <rect x="27" y="42" width="10" height="10" fill="#d48806"/>
+            <rect x="20" y="52" width="24" height="6" rx="2" fill="#874d00"/>
+          </svg>
+          <span id="trophy-count">65</span>
+        </div>
+
+        <div class="mission-pill" id="mission-pill">
+          <div class="mission-text">
+            finish<br/>race in<br/>first place
+          </div>
+          <div class="mission-check" id="mission-check">✔</div>
+        </div>
+
+        <div class="rank-widget">
+          <div class="rank-box">
+            <div class="checker-strip"></div>
+            <div class="rank-number" id="rank-number">3.</div>
+          </div>
+          <div class="rank-sub">
+            <div class="mini-cars-icon">🏎️💨</div>
+            <span id="distance-gap">15,5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP CENTER: Barra de Progresso da Corrida -->
+      <div class="hud-top-center">
+        <div class="race-progress-wrapper">
+          <div class="progress-pointer" id="progress-pointer">▼</div>
+          <div class="race-progress-bar">
+            <div class="race-progress-fill" id="race-progress-fill"></div>
+            <div class="race-finish-flag"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP RIGHT: Botões de Som, Câmera e Pausa -->
+      <div class="hud-top-right">
+        <button class="circle-hud-btn" id="btn-mute" title="Ativar/Desativar Som (M)">
+          <span id="mute-icon" style="font-size:24px;">🔊</span>
+        </button>
+        <button class="circle-hud-btn" id="btn-camera" title="Trocar Câmera (C)">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="white">
+            <path d="M4 6h11a2 2 0 0 1 2 2v2.5l4-3v9l-4-3V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm5 3l5 3-5 3V9z"/>
+          </svg>
+        </button>
+        <button class="circle-hud-btn" id="btn-pause" title="Pausar (P / ESC)">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="white">
+            <rect x="6" y="5" width="4" height="14" rx="1"/>
+            <rect x="14" y="5" width="4" height="14" rx="1"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- FEEDBACK CENTRAL (Near Miss / Overtake / NOS) -->
+      <div id="event-banner" class="event-banner hidden">FINO! +10 🏆</div>
+
+      <!-- BOTTOM LEFT: Setas de Direção -->
+      <div class="hud-bottom-left">
+        <button class="steer-btn" id="btn-left" aria-label="Esquerda">
+          <svg viewBox="0 0 60 80" width="52" height="68">
+            <polygon points="48,8 10,40 48,72" fill="#f7d61e" stroke="#c79e00" stroke-width="5" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="steer-btn" id="btn-right" aria-label="Direita">
+          <svg viewBox="0 0 60 80" width="52" height="68">
+            <polygon points="12,8 50,40 12,72" fill="#f7d61e" stroke="#c79e00" stroke-width="5" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- BOTTOM CENTER: Velocímetro Digital, Marcha, RPM e Barra de Vida -->
+      <div class="hud-bottom-center">
+        <div class="speedo-cluster">
+          <div class="speedo-top">
+            <div class="gear-box">
+              <span id="gear-value">5</span>
+              <small>GEAR</small>
+            </div>
+            <div class="speed-box">
+              <span id="speed-value">230</span>
+            </div>
+            <div class="unit-box">
+              <span>KM</span>
+              <hr/>
+              <span>H</span>
+            </div>
+          </div>
+          <div class="rpm-bar-container">
+            <div class="rpm-bar-fill" id="rpm-bar-fill"></div>
+            <div class="rpm-ticks">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="health-cluster">
+          <div class="heart-icon">❤️</div>
+          <div class="health-segments" id="health-segments">
+            <div class="health-seg active"></div>
+            <div class="health-seg active"></div>
+            <div class="health-seg active"></div>
+          </div>
+          <div class="heart-icon">❤️</div>
+        </div>
+      </div>
+
+      <!-- BOTTOM RIGHT: Botão NOS + Pedais de Freio e Acelerador -->
+      <div class="hud-bottom-right">
+        <button class="nos-btn" id="btn-nos" title="Ativar NOS (Espaço / Shift)">
+          <svg class="nos-ring" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" class="nos-ring-bg"/>
+            <circle cx="50" cy="50" r="44" class="nos-ring-progress" id="nos-ring-progress"/>
+          </svg>
+          <div class="nos-label">NOS<span>↗</span></div>
+        </button>
+
+        <div class="pedals-row">
+          <button class="pedal-btn brake-pedal" id="btn-brake" title="Frear (S / Seta Baixo)">
+            <div class="pedal-grooves">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </button>
+          <button class="pedal-btn gas-pedal" id="btn-gas" title="Acelerar (W / Seta Cima)">
+            <div class="pedal-grooves vertical">
+              <span></span><span></span><span></span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE INÍCIO / FIM DE CORRIDA / PAUSA -->
+    <div id="overlay-screen" class="overlay-screen">
+      <div class="modal-card">
+        <div class="modal-badge" id="modal-badge">🏁 HIGHWAY TRAFFIC RUSH 3D</div>
+        <h1 id="modal-title">RELÂMPAGO MCQUEEN</h1>
+        <p id="modal-subtitle">
+          Desvie do trânsito pesado na ponte costeira, use o <strong>NOS</strong> para ultrapassar os rivais e cruze a linha de chegada em <strong>1º Lugar</strong>!
+        </p>
+
+        <div class="controls-guide">
+          <div class="ctrl-item"><kbd>A</kbd> <kbd>D</kbd> ou <kbd>◀</kbd> <kbd>▶</kbd><span>Desviar nas Faixas</span></div>
+          <div class="ctrl-item"><kbd>W</kbd> / <kbd>▲</kbd> e <kbd>S</kbd> / <kbd>▼</kbd><span>Acelerar / Frear</span></div>
+          <div class="ctrl-item"><kbd>ESPAÇO</kbd> ou <kbd>SHIFT</kbd><span>Turbo NOS</span></div>
+          <div class="ctrl-item"><kbd>C</kbd><span>Ângulo da Câmera</span></div>
+        </div>
+
+        <div id="loading-status" class="loading-status">Carregando modelo 3D (relampago_mcqueen.glb)...</div>
+
+        <div class="modal-actions">
+          <button id="btn-start-game" class="primary-action-btn" disabled>CORRER AGORA 🏁</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="model_data.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
