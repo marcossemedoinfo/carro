@@ -285,6 +285,10 @@
   const btnPause = document.getElementById('btn-pause');
   const btnMute = document.getElementById('btn-mute');
   const muteIconEl = document.getElementById('mute-icon');
+  const btnFullscreen = document.getElementById('btn-fullscreen');
+  const btnEnterFullscreen = document.getElementById('btn-enter-fullscreen');
+  const btnDownloadShortcut = document.getElementById('btn-download-shortcut');
+  const installHintEl = document.getElementById('install-hint');
 
   // ============================================================================
   // CENA THREE.JS, CÂMERA E ILUMINAÇÃO COSTEIRA ENSOLARADA
@@ -869,6 +873,10 @@
 
   window.addEventListener('keydown', (e) => {
     sound.init();
+    if (e.code === 'KeyF') {
+      toggleFullscreen();
+      return;
+    }
     if (e.code === 'KeyC') {
       cycleCamera();
       return;
@@ -998,6 +1006,131 @@
     showBanner(isMuted ? 'SOM DESATIVADO 🔇' : 'SOM ATIVADO 🔊');
   }
 
+  // ============================================================================
+  // TELA CHEIA (FULLSCREEN) + DOWNLOAD DE ATALHO / INSTALAÇÃO PWA
+  // ============================================================================
+  async function enterFullscreen() {
+    const docEl = document.documentElement;
+    try {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) {
+          await docEl.requestFullscreen();
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        }
+      }
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Fullscreen aviso:', err);
+    }
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+        showBanner('SAIU DA TELA CHEIA');
+      } else {
+        await enterFullscreen();
+        showBanner('MODO TELA CHEIA ATIVADO ⛶');
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  // Registro do Service Worker e captura do prompt nativo de instalação PWA (Chrome/Edge/Android)
+  let deferredInstallPrompt = null;
+  if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (btnDownloadShortcut) {
+      btnDownloadShortcut.textContent = '📲 INSTALAR ATALHO FULLSCREEN';
+    }
+  });
+
+  function downloadBrowserShortcut() {
+    // 1. Se o navegador suportar instalação direta de App/Atalho em Tela Cheia (PWA), dispara o prompt nativo
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(() => {
+        deferredInstallPrompt = null;
+      });
+      return;
+    }
+
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+
+    // 2. No iPhone / Android, exibe a instrução de adicionar à tela de início e também ativa tela cheia
+    if (isIOS || isAndroid) {
+      enterFullscreen();
+      if (installHintEl) {
+        installHintEl.classList.remove('hidden');
+        installHintEl.innerHTML = isIOS
+          ? '📱 <strong>No iPhone:</strong> Toque em <strong>Compartilhar (⬆️)</strong> no Safari e escolha <strong>"Adicionar à Tela de Início"</strong> para criar o atalho em tela cheia!'
+          : '📱 <strong>No Android:</strong> Toque no menu <strong>⋮</strong> do navegador e escolha <strong>"Instalar aplicativo" / "Adicionar à tela inicial"</strong> para abrir sempre em tela cheia!';
+      }
+      return;
+    }
+
+    // 3. No Computador (Windows / Mac / Linux), gera e baixa um arquivo de atalho (.bat no Windows ou .url)
+    // que abre o navegador diretamente em modo App / Tela Cheia (--start-fullscreen --app=URL)
+    const targetUrl = window.location.protocol === 'file:'
+      ? 'https://marcossemedoinfo.github.io/carro/?fullscreen=1'
+      : new URL('./index.html?fullscreen=1', window.location.href).href;
+
+    const isWindows = /Win/i.test(navigator.platform || ua);
+
+    if (isWindows) {
+      const batContent = [
+        '@echo off',
+        'title Highway Rush 3D - Fullscreen',
+        'start "" msedge --app="' + targetUrl + '" --start-fullscreen 2>nul || start "" chrome --app="' + targetUrl + '" --start-fullscreen 2>nul || start "" "' + targetUrl + '"'
+      ].join('\r\n');
+
+      const blob = new Blob([batContent], { type: 'application/octet-stream' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Jogar McQueen Fullscreen.bat';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } else {
+      const urlShortcut = `[InternetShortcut]\r\nURL=${targetUrl}\r\n`;
+      const blob = new Blob([urlShortcut], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Jogar McQueen Fullscreen.url';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+
+    if (installHintEl) {
+      installHintEl.classList.remove('hidden');
+      installHintEl.innerHTML = '✔ <strong>Atalho baixado!</strong> Abra o arquivo baixado para iniciar o jogo direto em <strong>Tela Cheia</strong>.';
+    }
+    showBanner('ATALHO FULLSCREEN BAIXADO! ⬇');
+  }
+
+  if (btnFullscreen) btnFullscreen.addEventListener('click', toggleFullscreen);
+  if (btnEnterFullscreen) btnEnterFullscreen.addEventListener('click', toggleFullscreen);
+  if (btnDownloadShortcut) btnDownloadShortcut.addEventListener('click', downloadBrowserShortcut);
+
   btnMute.addEventListener('click', toggleMuteButton);
   btnCamera.addEventListener('click', cycleCamera);
   btnPause.addEventListener('click', () => {
@@ -1006,6 +1139,10 @@
 
   btnStartGame.addEventListener('click', () => {
     sound.init();
+    // Se foi aberto pelo atalho fullscreen (?fullscreen=1) ou em dispositivo móvel, entra em tela cheia automaticamente ao iniciar
+    if (window.location.search.includes('fullscreen=1') || window.innerWidth <= 900) {
+      enterFullscreen();
+    }
     if (state.paused) {
       togglePause();
     } else {

@@ -1,0 +1,18 @@
+{
+  "name": "Highway Rush 3D - Relâmpago McQueen",
+  "short_name": "McQueen 3D",
+  "description": "Jogo 3D de corrida e trânsito na ponte costeira com o Relâmpago McQueen.",
+  "start_url": "./index.html?fullscreen=1",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d1824",
+  "theme_color": "#ffe324",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

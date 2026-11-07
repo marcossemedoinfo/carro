@@ -6,6 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ffe324" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
   <title>Highway Rush 3D - Relâmpago McQueen</title>
   <link rel="stylesheet" href="style.css" />
   <!-- Import Three.js via CDN -->
@@ -74,8 +78,13 @@
         </div>
       </div>
 
-      <!-- TOP RIGHT: Botões de Som, Câmera e Pausa -->
+      <!-- TOP RIGHT: Botões de Tela Cheia, Som, Câmera e Pausa -->
       <div class="hud-top-right">
+        <button class="circle-hud-btn" id="btn-fullscreen" title="Tela Cheia / Fullscreen (F)">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+            <path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zm4 14v-4h2v6h-6v-2h4zM6 14v4h4v2H4v-6h2z"/>
+          </svg>
+        </button>
         <button class="circle-hud-btn" id="btn-mute" title="Ativar/Desativar Som (M)">
           <span id="mute-icon" style="font-size:24px;">🔊</span>
         </button>
@@ -190,6 +199,11 @@
 
         <div class="modal-actions">
           <button id="btn-start-game" class="primary-action-btn" disabled>CORRER AGORA 🏁</button>
+          <div class="secondary-actions">
+            <button id="btn-enter-fullscreen" class="secondary-action-btn" type="button">⛶ JOGAR EM TELA CHEIA</button>
+            <button id="btn-download-shortcut" class="secondary-action-btn" type="button">⬇ BAIXAR ATALHO FULLSCREEN</button>
+          </div>
+          <p id="install-hint" class="install-hint hidden"></p>
         </div>
       </div>
     </div>

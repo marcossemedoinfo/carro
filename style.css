@@ -730,6 +730,48 @@ kbd {
   box-shadow: 0 2px 0 #b86f00;
 }
 
+.secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.secondary-action-btn {
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 227, 36, 0.55);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.secondary-action-btn:hover {
+  background: rgba(255, 227, 36, 0.22);
+}
+
+.secondary-action-btn:active {
+  transform: scale(0.96);
+}
+
+.install-hint {
+  margin-top: 12px;
+  margin-bottom: 0 !important;
+  font-size: 12.5px !important;
+  color: #ffe324 !important;
+  background: rgba(255, 227, 36, 0.12);
+  border: 1px solid rgba(255, 227, 36, 0.35);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.install-hint.hidden {
+  display: none;
+}
+
 /* Responsividade Mobile (Android & iPhone em Retrato ou Paisagem) */
 @media (max-width: 900px), (max-height: 550px) {
   .hud-top-left {
